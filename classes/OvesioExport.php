@@ -20,6 +20,10 @@ class OvesioExport
             $durationMonths = 12;
         }
 
+        $defaultCurrencyId = (int)Configuration::get('PS_CURRENCY_DEFAULT');
+        $defaultCurrency = new Currency($defaultCurrencyId);
+        $defaultCurrencyIso = $defaultCurrency->iso_code;
+
         $dateFrom = date('Y-m-d', strtotime("-$durationMonths months"));
 
 
@@ -37,6 +41,8 @@ class OvesioExport
         $sql = '
             SELECT
                 o.id_order as order_id,
+                o.id_currency,
+                o.conversion_rate,
                 c.email,
                 o.total_paid_tax_incl as total,
                 o.date_add as date
@@ -54,12 +60,25 @@ class OvesioExport
         if ($orders && is_array($orders)) {
             foreach ($orders as $row) {
                 $orderId = (int)$row['order_id'];
-                $orderProducts = $this->getOrderProducts($orderId);
+                $orderCurrencyId = (int)$row['id_currency'];
+                $conversionRate = (float)$row['conversion_rate'];
+                
+                $total = (float)$row['total'];
+                $rateToUse = 1.0;
+
+                // If order currency is different from default, we need to convert back to default
+                if ($orderCurrencyId != $defaultCurrencyId && $conversionRate > 0) {
+                    $total = $total / $conversionRate;
+                    $rateToUse = $conversionRate;
+                }
+
+                $orderProducts = $this->getOrderProducts($orderId, $rateToUse, $defaultCurrencyIso);
 
                 $data[$orderId] = [
                     'order_id' => $orderId,
                     'customer_id' => md5($row['email']),
-                    'total' => (float)$row['total'],
+                    'total' => (float)$total,
+                    'currency' => $defaultCurrencyIso,
                     'date' => $row['date'],
                     'products' => $orderProducts
                 ];
@@ -69,7 +88,7 @@ class OvesioExport
         return array_values($data);
     }
 
-    private function getOrderProducts($orderId)
+    private function getOrderProducts($orderId, $conversionRate = 1.0, $currencyIso = '')
     {
         $sql = '
             SELECT
@@ -99,11 +118,17 @@ class OvesioExport
                 }
             }
 
+            $price = (float)$p['price'];
+            if ($conversionRate != 1.0 && $conversionRate > 0) {
+                $price = $price / $conversionRate;
+            }
+
             $products[] = [
                 'sku' => $sku,
                 'name' => $p['name'],
                 'quantity' => (int)$p['quantity'],
-                'price' => (float)$p['price']
+                'price' => (float)$price,
+                'currency' => $currencyIso
             ];
         }
 
@@ -115,6 +140,7 @@ class OvesioExport
         $idLang = (int)$this->context->language->id;
         $idShop = (int)$this->context->shop->id;
         $idGroup = (int)$this->context->customer->id ? $this->context->customer->id_default_group : Group::getCurrent()->id;
+        $currencyIso = $this->context->currency->iso_code;
 
         $sql = '
             SELECT
@@ -183,6 +209,7 @@ class OvesioExport
                 'name' => $row['name'],
                 'quantity' => $quantity,
                 'price' => (float)$price,
+                'currency' => $currencyIso,
                 'availability' => $availability,
                 'description' => $description,
                 'manufacturer' => $row['manufacturer'],
