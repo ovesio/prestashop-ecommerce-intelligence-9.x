@@ -2,11 +2,10 @@
     "name": "ovesio/ovesio-ecommerce-prestashop-9.x",
     "description": "Ovesio - Ecommerce Intelligence",
     "version": "1.1.0",
-    "license": "AFL-3.0",
+    "license": "MIT",
     "authors": [
         {
-            "name": "Ovesio",
-            "email": "contact@ovesio.com"
+            "name": "Ovesio"
         }
     ],
     "type": "prestashop-module",
