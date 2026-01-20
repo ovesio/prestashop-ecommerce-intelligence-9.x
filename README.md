@@ -34,7 +34,7 @@ Connect your store to Ovesio to unlock powerful capabilities:
 
 ## Installation
 
-1.  **Download** the latest version of `ovesio_ecommerce.ocmod.zip` from the [Releases](https://github.com/ovesio/ecommerce-intelligence-prestashop-9.x-module/releases) section.
+1.  **Download** the latest version of `ovesio_ecommerce.zip` from the [Releases](https://github.com/ovesio/ecommerce-intelligence-prestashop-9.x-module/releases) section.
 2.  **Upload:**
     *   Log in to your PrestaShop Admin Panel (Back Office).
     *   Navigate to **Improve** > **Modules** > **Module Manager**.
